@@ -9,5 +9,16 @@ module.exports = function (api) {
         },
       ],
     ],
+    plugins: [
+      // Add alias plugin to ensure proper resolution
+      [
+        'module-resolver',
+        {
+          alias: {
+            '@': './',
+          },
+        },
+      ],
+    ],
   };
 };

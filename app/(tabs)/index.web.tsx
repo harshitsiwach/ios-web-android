@@ -1,6 +1,6 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Define the crypto data structure
 type Cryptocurrency = {
@@ -18,6 +18,28 @@ type TeamSelection = {
   prediction: 'up' | 'down';
 };
 
+// Custom Alert component for web
+const CustomAlert = ({ visible, title, message, onClose }: { visible: boolean; title: string; message: string; onClose: () => void }) => {
+  const { colors } = useTheme();
+  
+  if (!visible) return null;
+  
+  return (
+    <View style={styles.modalOverlay}>
+      <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+        <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.modalMessage, { color: colors.text }]}>{message}</Text>
+        <TouchableOpacity 
+          style={[styles.modalButton, { backgroundColor: colors.primary }]} 
+          onPress={onClose}
+        >
+          <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>OK</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
 export default function HomeScreen() {
   const { theme, colors, toggleTheme } = useTheme();
   const [cryptos, setCryptos] = useState<Cryptocurrency[]>([]);
@@ -25,6 +47,16 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCryptos, setSelectedCryptos] = useState<Record<string, 'up' | 'down' | null>>({});
   const [team, setTeam] = useState<TeamSelection[]>([]);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+
+  // Show custom alert
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
 
   // Fetch crypto data from CoinGecko API
   const fetchCryptoData = async () => {
@@ -73,10 +105,9 @@ export default function HomeScreen() {
     const isAlreadySelected = selectedCryptos[id] === prediction;
     
     if (!isAlreadySelected && currentSelections >= 5) {
-      Alert.alert(
+      showAlert(
         'Team Full',
-        'You can only select up to 5 tokens for your team.',
-        [{ text: 'OK' }]
+        'You can only select up to 5 tokens for your team.'
       );
       return;
     }
@@ -90,10 +121,9 @@ export default function HomeScreen() {
   // View team function
   const viewTeam = () => {
     if (team.length === 0) {
-      Alert.alert(
+      showAlert(
         'Empty Team',
-        'Please select at least one token for your team.',
-        [{ text: 'OK' }]
+        'Please select at least one token for your team.'
       );
       return;
     }
@@ -107,11 +137,7 @@ export default function HomeScreen() {
 `;
     });
     
-    Alert.alert(
-      'Your Team',
-      teamMessage,
-      [{ text: 'OK' }]
-    );
+    showAlert('Your Team', teamMessage);
   };
 
   // Loading state
@@ -128,6 +154,13 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <CustomAlert 
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={() => setAlertVisible(false)}
+      />
+      
       <ScrollView
         refreshControl={
           <RefreshControl 
@@ -391,6 +424,41 @@ const styles = StyleSheet.create({
   },
   actionTextSmall: {
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
     fontWeight: 'bold',
   },
 });

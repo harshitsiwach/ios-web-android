@@ -15,6 +15,28 @@ type NewsArticle = {
   };
 };
 
+// Custom Alert component for web
+const CustomAlert = ({ visible, title, message, onClose }: { visible: boolean; title: string; message: string; onClose: () => void }) => {
+  const { colors } = useTheme();
+  
+  if (!visible) return null;
+  
+  return (
+    <View style={styles.modalOverlay}>
+      <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+        <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.modalMessage, { color: colors.text }]}>{message}</Text>
+        <TouchableOpacity 
+          style={[styles.modalButton, { backgroundColor: colors.primary }]} 
+          onPress={onClose}
+        >
+          <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>OK</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
 export default function NewsScreen() {
   const { colors } = useTheme();
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -22,6 +44,16 @@ export default function NewsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+
+  // Show custom alert
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
 
   // Fetch crypto news from CryptoCompare API
   const fetchCryptoNews = async () => {
@@ -147,6 +179,13 @@ export default function NewsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <CustomAlert 
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={() => setAlertVisible(false)}
+      />
+      
       <Text style={[styles.header, { color: colors.text }]}>Crypto News</Text>
       
       {/* Slideshow */}
@@ -348,5 +387,40 @@ const styles = StyleSheet.create({
     marginVertical: 30,
     height: 1,
     width: '80%',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    fontWeight: 'bold',
   },
 });

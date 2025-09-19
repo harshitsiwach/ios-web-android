@@ -1,39 +1,98 @@
-import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
+import { Tabs } from 'expo-router';
+import { useTheme } from '@/contexts/ThemeContext';
+import { StyleSheet, View, Text } from 'react-native';
 
 export default function TabLayout() {
+  const { colors } = useTheme();
+  
   return (
-    <NativeTabs 
-      appearance="liquid-glass"
+    <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#FFA500',
         tabBarInactiveTintColor: '#888888',
+        tabBarStyle: {
+          backgroundColor: colors.cardBackground,
+          borderTopColor: colors.border,
+        },
       }}
     >
-      <NativeTabs.Trigger name="index">
-        <Icon systemName="house.fill" />
-        <Label>Home</Label>
-      </NativeTabs.Trigger>
-      
-      <NativeTabs.Trigger name="polymarket">
-        <Icon systemName="chart.bar.xaxis" />
-        <Label>Polymarket</Label>
-      </NativeTabs.Trigger>
-      
-      <NativeTabs.Trigger name="hyperliquid">
-        <Icon systemName="chart.line.uptrend.xyaxis" />
-        <Label>Hyperliquid</Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="news">
-        <Icon systemName="newspaper.fill" />
-        <Label>News</Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="search">
-        <Icon systemName="magnifyingglass" />
-        <Label>Search</Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.iconContainer}>
+              <Text style={[styles.icon, { color }]}>🏠</Text>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="polymarket"
+        options={{
+          title: 'Polymarket',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.iconContainer}>
+              <Text style={[styles.icon, { color }]}>📊</Text>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="hyperliquid"
+        options={{
+          title: 'Hyperliquid',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.iconContainer}>
+              <Text style={[styles.icon, { color }]}>📈</Text>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="news"
+        options={{
+          title: 'News',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.iconContainer}>
+              <Text style={[styles.icon, { color }]}>📰</Text>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          title: 'Wallet',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.iconContainer}>
+              <Text style={[styles.icon, { color }]}>💼</Text>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color }) => (
+            <View style={styles.iconContainer}>
+              <Text style={[styles.icon, { color }]}>🔍</Text>
+            </View>
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  icon: {
+    fontSize: 20,
+  },
+});
