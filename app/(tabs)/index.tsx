@@ -3,10 +3,35 @@ import { Text } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { AppKitButton } from '@reown/appkit-wagmi-react-native';
 import { useWallet } from '@/hooks/use-wallet';
+import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
+import { useEffect, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { address, isConnected, open } = useWallet();
+  const { switchToBase, getNetworkName, currentChain } = useNetworkSwitcher();
+  
+  // Switch to Base network when this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (currentChain?.id !== 8453) { // Base mainnet chain ID
+        Alert.alert(
+          'Network Switch Required',
+          `Switch from ${getNetworkName(currentChain?.id)} to Base network?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Switch', 
+              onPress: () => {
+                switchToBase();
+              }
+            }
+          ]
+        );
+      }
+    }, [currentChain, getNetworkName, switchToBase])
+  );
   
   const handleCustomConnect = () => {
     open();

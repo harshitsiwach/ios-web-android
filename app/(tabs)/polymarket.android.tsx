@@ -1,6 +1,8 @@
-import { StyleSheet, View, FlatList, RefreshControl, ActivityIndicator, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
-import { useEffect, useState } from 'react';
+import { StyleSheet, View, FlatList, RefreshControl, ActivityIndicator, Text, Image, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
+import { useFocusEffect } from 'expo-router';
 
 // Define the Polymarket market structure
 type PolymarketMarket = {
@@ -28,10 +30,32 @@ type PolymarketMarket = {
 
 export default function PolymarketScreen() {
   const { colors } = useTheme();
+  const { switchToPolygon, getNetworkName, currentChain } = useNetworkSwitcher();
   const [markets, setMarkets] = useState<PolymarketMarket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Switch to Polygon network when this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (currentChain?.id !== 137) { // Polygon mainnet chain ID
+        Alert.alert(
+          'Network Switch Required',
+          `Switch from ${getNetworkName(currentChain?.id)} to Polygon network?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Switch', 
+              onPress: () => {
+                switchToPolygon();
+              }
+            }
+          ]
+        );
+      }
+    }, [currentChain, getNetworkName, switchToPolygon])
+  );
 
   // Parse outcomes from JSON string
   const parseOutcomes = (outcomes: string): string[] => {

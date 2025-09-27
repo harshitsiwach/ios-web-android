@@ -1,7 +1,9 @@
 import { StyleSheet, View, FlatList, RefreshControl, ActivityIndicator, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Hyperliquid } from 'hyperliquid';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
+import { useFocusEffect } from 'expo-router';
 
 import {
   Host,
@@ -27,10 +29,32 @@ type MarketData = {
 
 export default function HyperliquidScreen() {
   const { colors } = useTheme();
+  const { switchToArbitrum, getNetworkName, currentChain } = useNetworkSwitcher();
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Switch to Arbitrum network when this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (currentChain?.id !== 42161) { // Arbitrum One chain ID
+        Alert.alert(
+          'Network Switch Required',
+          `Switch from ${getNetworkName(currentChain?.id)} to Arbitrum network?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Switch', 
+              onPress: () => {
+                switchToArbitrum();
+              }
+            }
+          ]
+        );
+      }
+    }, [currentChain, getNetworkName, switchToArbitrum])
+  );
 
   // Fetch market data from Hyperliquid
   const fetchMarketData = async () => {

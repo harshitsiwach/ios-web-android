@@ -1,7 +1,9 @@
 import { StyleSheet, Image, Alert, RefreshControl } from 'react-native';
 import { ActivityIndicator } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
+import { useFocusEffect } from 'expo-router';
 
 import {
   Host,
@@ -32,11 +34,33 @@ type TeamSelection = {
 
 export default function HomeScreen() {
   const { theme, colors, toggleTheme } = useTheme();
+  const { switchToBase, getNetworkName, currentChain } = useNetworkSwitcher();
   const [cryptos, setCryptos] = useState<Cryptocurrency[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCryptos, setSelectedCryptos] = useState<Record<string, 'up' | 'down' | null>>({});
   const [team, setTeam] = useState<TeamSelection[]>([]);
+
+  // Switch to Base network when this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (currentChain?.id !== 8453) { // Base mainnet chain ID
+        Alert.alert(
+          'Network Switch Required',
+          `Switch from ${getNetworkName(currentChain?.id)} to Base network?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Switch', 
+              onPress: () => {
+                switchToBase();
+              }
+            }
+          ]
+        );
+      }
+    }, [currentChain, getNetworkName, switchToBase])
+  );
 
   // Fetch crypto data from CoinGecko API
   const fetchCryptoData = async () => {
