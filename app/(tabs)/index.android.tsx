@@ -1,9 +1,9 @@
-import { StyleSheet, View, ScrollView, FlatList, RefreshControl, ActivityIndicator, Text, Image, TouchableOpacity, Alert } from 'react-native';
-import { useEffect, useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
 import { useFocusEffect } from 'expo-router';
-
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Modal from "react-native-modal";
 // Define the crypto data structure
 type Cryptocurrency = {
   id: string;
@@ -28,7 +28,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCryptos, setSelectedCryptos] = useState<Record<string, 'up' | 'down' | null>>({});
   const [team, setTeam] = useState<TeamSelection[]>([]);
-
+ const [isVisible, setIsVisible] = useState(false);
+ const [isContestModalVisible, setIsContestModalVisible] = useState(false);
   // Switch to Base network when this screen is focused
   useFocusEffect(
     useCallback(() => {
@@ -174,7 +175,7 @@ export default function HomeScreen() {
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Real-time prices & trends</Text>
               </View>
               <View style={styles.headerActions}>
-                <TouchableOpacity style={styles.actionButton} onPress={viewTeam}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => setIsVisible(true)} >
                   <Text style={[styles.actionText, { color: colors.primary }]}>View Team</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={toggleTheme}>
@@ -182,9 +183,136 @@ export default function HomeScreen() {
                     {theme === 'dark' ? '☀️' : '🌙'}
                   </Text>
                 </TouchableOpacity>
+
+                  {/* modal */}
+                  
+      <Modal
+        isVisible={isVisible}
+        onBackdropPress={() => setIsVisible(false)} // close when tapping outside
+        style={styles.modal}
+      >
+        <View style={[styles.sheet, { backgroundColor: colors.cardBackground }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Your Team</Text>
+            <TouchableOpacity onPress={() => setIsVisible(false)}>
+              <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                ${team.reduce((sum, selection) => sum + selection.crypto.current_price, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Value</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {team.length > 0 ? (team.reduce((sum, selection) => sum + selection.crypto.price_change_percentage_24h, 0) / team.length).toFixed(2) + '%' : '0.00%'}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg. Change</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {team.filter(selection => selection.prediction === 'up').length}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Bullish</Text>
+            </View>
+          </View>
+
+          {/* Team List */}
+          {team.length > 0 ? (
+            team.map((selection, index) => (
+              <View key={selection.crypto.id} style={[styles.teamItem, { borderBottomColor: colors.border }]}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {selection.crypto.image ? (
+                    <Image source={{ uri: selection.crypto.image }} style={styles.cryptoLogoSmall} />
+                  ) : (
+                    <View style={[styles.cryptoLogoPlaceholder, { backgroundColor: colors.cardBackground }]} />
+                  )}
+                  <Text style={[styles.coinName, { color: colors.text }]}>{selection.crypto.name}</Text>
+                </View>
+                <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+                  <Text style={[styles.prediction, { color: selection.prediction === 'up' ? colors.up : colors.down, fontWeight: "bold" }]}>
+                    {selection.prediction.toUpperCase()}
+                  </Text>
+                  <TouchableOpacity onPress={() => handleCryptoSelect(selection.crypto.id, selection.prediction)}>
+                    <Text style={{ color: colors.primary, fontWeight: "bold" }}>💹</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={[styles.emptyTeamText, { color: colors.textSecondary }]}>No tokens selected yet</Text>
+          )}
+
+          {/* Submit Button */}
+          <TouchableOpacity 
+            style={[styles.submitBtn, { backgroundColor: colors.primary }]}
+            onPress={() => {
+              if (team.length === 0) {
+                Alert.alert('Empty Team', 'Please select at least one token for your team.', [{ text: 'OK' }]);
+                return;
+              }
+              setIsVisible(false);
+              setIsContestModalVisible(true);
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>Submit Team</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
               </View>
             </View>
           </View>
+
+          {/* Contest Selection Modal */}
+          <Modal
+            isVisible={isContestModalVisible}
+            onBackdropPress={() => setIsContestModalVisible(false)} // close when tapping outside
+            style={styles.modal}
+          >
+            <View style={[styles.sheet, { backgroundColor: colors.cardBackground }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.title, { color: colors.text }]}>Select Contest</Text>
+                <TouchableOpacity onPress={() => setIsContestModalVisible(false)}>
+                  <Text style={[styles.closeButton, { color: colors.text }]}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Contest Selection List */}
+              <View style={styles.contestList}>
+                {[
+                  { id: 'daily', name: 'Daily Challenge', description: 'Predict price movements for the next 24 hours' },
+                  { id: 'weekly', name: 'Weekly Challenge', description: 'Predict price movements for the next 7 days' },
+                  { id: 'monthly', name: 'Monthly Challenge', description: 'Predict price movements for the next 30 days' },
+                  { id: 'custom', name: 'Custom Contest', description: 'Set your own duration and parameters' },
+                ].map((contest) => (
+                  <TouchableOpacity
+                    key={contest.id}
+                    style={[styles.contestItem, { borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      // Here you would handle contest selection
+                      Alert.alert(
+                        'Contest Selected',
+                        `You selected: ${contest.name}\n\n${contest.description}`,
+                        [{ text: 'OK' }]
+                      );
+                      setIsContestModalVisible(false);
+                    }}
+                  >
+                    <View>
+                      <Text style={[styles.contestName, { color: colors.text }]}>{contest.name}</Text>
+                      <Text style={[styles.contestDescription, { color: colors.textSecondary }]}>{contest.description}</Text>
+                    </View>
+                    <Text style={{ color: colors.primary }}>→</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </Modal>
 
           {/* Team selection indicator */}
           {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length > 0 && (
@@ -277,6 +405,77 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  modal: { justifyContent: "flex-end", margin: 0 }, // bottom sheet
+  sheet: {
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+  },
+
+  statsRow: { flexDirection: "row", justifyContent: "space-between", marginVertical: 15 },
+  statBox: { alignItems: "center", flex: 1 },
+  statValue: { fontSize: 16, fontWeight: "bold" },
+  statLabel: { fontSize: 12 },
+  teamItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  coinName: { fontSize: 16, marginLeft: 10 },
+  prediction: { fontSize: 14, fontWeight: "bold" },
+  submitBtn: {
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  cryptoLogoSmall: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  cryptoLogoPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  emptyTeamText: {
+    textAlign: "center",
+    paddingVertical: 20,
+    fontSize: 16,
+  },
+  closeButton: {
+    fontSize: 18,
+  },
+  contestList: {
+    marginTop: 15,
+  },
+  contestItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+  },
+  contestName: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  contestDescription: {
+    fontSize: 14,
+    marginTop: 5,
+  },
+
   container: {
     flex: 1,
   },
@@ -285,6 +484,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+
   content: {
     padding: 16,
   },
@@ -371,11 +572,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
   },
-  cryptoLogoPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
+  
   cryptoInfo: {
     flex: 1,
     marginLeft: 10,

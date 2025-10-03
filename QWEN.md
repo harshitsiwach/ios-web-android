@@ -26,6 +26,7 @@ The application features a theme system with light and dark modes, and uses mode
 - **TanStack Query** - Server state management
 - **Viem** - Ethereum development library
 - **Hyperliquid SDK** - Crypto trading data integration
+- **Reown (WalletConnect)** - Wallet connection functionality
 
 ## Project Structure
 
@@ -116,6 +117,15 @@ npm run lint
 - Shows prices, funding rates, open interest, and 24h volume
 - Requires polyfills for React Native compatibility
 
+## Wallet Integration
+
+The app includes wallet integration using Reown (WalletConnect) with support for multiple chains:
+- Ethereum
+- Polygon (for Polymarket)
+- Arbitrum (for Hyperliquid)
+- Base
+- Optimism
+
 ## Key Files
 
 - `app.json` - Expo configuration
@@ -134,3 +144,7 @@ Based on documentation, planned features include:
 - Trading simulation capabilities
 - Portfolio tracking
 - Notification system for market changes
+
+## Qwen Added Memories
+- mainmemo
+- added dark and light theme to it

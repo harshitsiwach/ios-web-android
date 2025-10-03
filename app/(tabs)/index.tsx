@@ -1,11 +1,10 @@
-import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
-import { Text } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { AppKitButton } from '@reown/appkit-wagmi-react-native';
 import { useWallet } from '@/hooks/use-wallet';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
-import { useEffect, useCallback } from 'react';
+import { AppKitButton } from '@reown/appkit-wagmi-react-native';
 import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
