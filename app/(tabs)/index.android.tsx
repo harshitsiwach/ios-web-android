@@ -238,7 +238,9 @@ export default function HomeScreen() {
                     {selection.prediction.toUpperCase()}
                   </Text>
                   <TouchableOpacity onPress={() => handleCryptoSelect(selection.crypto.id, selection.prediction)}>
-                    <Text style={{ color: colors.primary, fontWeight: "bold" }}>💹</Text>
+                    <Text style={{ color: colors.primary, fontWeight: "bold" }}>
+                      {selection.prediction === 'up' ? '📈' : '📉'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -285,10 +287,10 @@ export default function HomeScreen() {
               {/* Contest Selection List */}
               <View style={styles.contestList}>
                 {[
-                  { id: 'daily', name: 'Daily Challenge', description: 'Predict price movements for the next 24 hours' },
-                  { id: 'weekly', name: 'Weekly Challenge', description: 'Predict price movements for the next 7 days' },
-                  { id: 'monthly', name: 'Monthly Challenge', description: 'Predict price movements for the next 30 days' },
-                  { id: 'custom', name: 'Custom Contest', description: 'Set your own duration and parameters' },
+                  { id: 'daily', name: 'Premiere League (Daily Challenge)', description: 'Predict price movements for the next 24 hours' },
+                  { id: 'weekly', name: 'NBA Fantasy Challenge (Weekly Challenge)', description: 'Predict price movements for the next 7 days' },
+                  { id: 'monthly', name: 'Grand Slam (Monthly Challenge)', description: 'Predict price movements for the next 30 days' },
+                  
                 ].map((contest) => (
                   <TouchableOpacity
                     key={contest.id}
@@ -428,8 +430,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: 20,
+    borderBottomWidth: 5,
+   
+    
   },
   coinName: { fontSize: 16, marginLeft: 10 },
   prediction: { fontSize: 14, fontWeight: "bold" },
