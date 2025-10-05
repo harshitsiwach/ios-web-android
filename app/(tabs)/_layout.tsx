@@ -113,7 +113,19 @@ export default function TabLayout() {
           ),
         }}
       />
-      
+      <Tabs.Screen
+        name="aster"
+        options={{
+          title: 'Aster',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'newspaper' : 'newspaper-outline'}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
