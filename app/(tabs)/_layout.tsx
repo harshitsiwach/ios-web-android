@@ -1,11 +1,14 @@
-import { Tabs } from 'expo-router';
-import { useTheme } from '@/contexts/ThemeContext';
-import { StyleSheet, View, Text } from 'react-native';
 import WalletButton from '@/components/WalletButton';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { Tabs, useRouter } from 'expo-router';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TabLayout() {
-  const { colors } = useTheme();
-  
+  const { colors, theme, toggleTheme } = useTheme();
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -16,12 +19,45 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
-        headerRight: () => <WalletButton />,
+        headerRight: () => (
+          <View style={styles.headerRightContainer}>
+            <WalletButton />
+            <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
+              <Text style={[styles.themeToggleText, { color: colors.primary }]}>
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ),
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
+        tabBarBackground: () => (
+          <BlurView
+            tint="dark"
+            intensity={60}
+            style={StyleSheet.absoluteFill}
+          />
+          
+        ),
         tabBarStyle: {
-          backgroundColor: colors.cardBackground,
-          borderTopColor: colors.border,
+          position: 'relative',
+          bottom: 0,
+          left: 20,
+          right: 20,
+          elevation: 0,
+          borderRadius: 25,
+          height: 70,
+          borderTopWidth: 0,
+          overflow: 'hidden',
+          shadowColor: '#000',
+          shadowOpacity: 0.15,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 5 },
+          backgroundColor : "black"
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
         },
       }}
     >
@@ -29,10 +65,12 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <View style={styles.iconContainer}>
-              <Text style={[styles.icon, { color }]}>🏠</Text>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -40,10 +78,12 @@ export default function TabLayout() {
         name="polymarket"
         options={{
           title: 'Polymarket',
-          tabBarIcon: ({ color }) => (
-            <View style={styles.iconContainer}>
-              <Text style={[styles.icon, { color }]}>📊</Text>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'bar-chart' : 'bar-chart-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -51,10 +91,12 @@ export default function TabLayout() {
         name="hyperliquid"
         options={{
           title: 'Hyperliquid',
-          tabBarIcon: ({ color }) => (
-            <View style={styles.iconContainer}>
-              <Text style={[styles.icon, { color }]}>📈</Text>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'trending-up' : 'trending-up-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -62,34 +104,32 @@ export default function TabLayout() {
         name="news"
         options={{
           title: 'News',
-          tabBarIcon: ({ color }) => (
-            <View style={styles.iconContainer}>
-              <Text style={[styles.icon, { color }]}>📰</Text>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'newspaper' : 'newspaper-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color }) => (
-            <View style={styles.iconContainer}>
-              <Text style={[styles.icon, { color }]}>🔍</Text>
-            </View>
-          ),
-        }}
-      />
+      
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  iconContainer: {
-    justifyContent: 'center',
+  headerRightContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 10,
   },
-  icon: {
-    fontSize: 20,
+  themeToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 10,
+  },
+  themeToggleText: {
+    fontSize: 18,
   },
 });

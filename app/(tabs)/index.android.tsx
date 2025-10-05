@@ -2,7 +2,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Modal from "react-native-modal";
 // Define the crypto data structure
 type Cryptocurrency = {
@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const { theme, colors, toggleTheme } = useTheme();
   const { switchToBase, getNetworkName, currentChain } = useNetworkSwitcher();
   const [cryptos, setCryptos] = useState<Cryptocurrency[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCryptos, setSelectedCryptos] = useState<Record<string, 'up' | 'down' | null>>({});
@@ -85,6 +86,12 @@ export default function HomeScreen() {
     });
     setTeam(newTeam);
   }, [selectedCryptos, cryptos]);
+
+  // Filter cryptos based on search term
+  const filteredCryptos = cryptos.filter(crypto => 
+    crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Refresh function for pull-to-refresh
   const onRefresh = () => {
@@ -164,6 +171,23 @@ export default function HomeScreen() {
       >
         <View style={styles.content}>
           {/* Header */}
+          <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground }]}>
+            <View style={styles.searchIconContainer}>
+              <Text style={styles.searchIcon}>🔍</Text>
+            </View>
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Search cryptos..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+            />
+            {searchTerm.length > 0 && (
+              <TouchableOpacity style={styles.clearButton} onPress={() => setSearchTerm('')}>
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={[styles.header, { backgroundColor: colors.cardBackground }]}>
             <View style={styles.headerContent}>
               <Image 
@@ -178,11 +202,7 @@ export default function HomeScreen() {
                 <TouchableOpacity style={styles.actionButton} onPress={() => setIsVisible(true)} >
                   <Text style={[styles.actionText, { color: colors.primary }]}>View Team</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton} onPress={toggleTheme}>
-                  <Text style={[styles.actionText, { color: colors.primary }]}>
-                    {theme === 'dark' ? '☀️' : '🌙'}
-                  </Text>
-                </TouchableOpacity>
+
 
                   {/* modal */}
                   
@@ -316,6 +336,9 @@ export default function HomeScreen() {
             </View>
           </Modal>
 
+          {/* Search Bar */}
+          
+
           {/* Team selection indicator */}
           {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length > 0 && (
             <View style={[styles.teamIndicator, { backgroundColor: colors.cardBackground }]}>
@@ -327,7 +350,7 @@ export default function HomeScreen() {
 
           {/* Crypto list */}
           <View style={styles.cryptoList}>
-            {cryptos.map((item) => (
+            {filteredCryptos.map((item) => (
               <View 
                 key={item.id} 
                 style={[
@@ -616,5 +639,38 @@ const styles = StyleSheet.create({
   actionTextSmall: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  searchIconContainer: {
+    marginRight: 10,
+  },
+  searchIcon: {
+    fontSize: 18,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0, // Reset default padding
+  },
+  clearButton: {
+    paddingLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearButtonText: {
+    fontSize: 18,
+    color: '#888',
   },
 });

@@ -24,6 +24,7 @@ export const darkTheme = {
   gradientEnd: '#111111',
   up: '#4CAF50', // Green for positive changes
   down: '#F44336', // Red for negative changes
+  
 };
 
 export type Theme = typeof lightTheme;

@@ -148,3 +148,4 @@ Based on documentation, planned features include:
 ## Qwen Added Memories
 - mainmemo
 - added dark and light theme to it
+- erro search
