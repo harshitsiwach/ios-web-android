@@ -184,7 +184,7 @@ export default function HomeScreen() {
             />
             {searchTerm.length > 0 && (
               <TouchableOpacity style={styles.clearButton} onPress={() => setSearchTerm('')}>
-                <Text style={styles.clearButtonText}>✕</Text>
+                <Text style={[styles.clearButtonText, { color: colors.text }]}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -655,6 +655,7 @@ const styles = StyleSheet.create({
   },
   searchIconContainer: {
     marginRight: 10,
+    justifyContent: 'center',
   },
   searchIcon: {
     fontSize: 18,
@@ -663,14 +664,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     padding: 0, // Reset default padding
+    marginRight: 5, // Add margin to make space for clear button
   },
   clearButton: {
-    paddingLeft: 10,
+    marginLeft: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 5,
   },
   clearButtonText: {
     fontSize: 18,
-    color: '#888',
   },
 });
