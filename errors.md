@@ -1,4 +1,4 @@
-ndroid Bundling failed 2959ms node_modules\expo-router\entry.js (6050 modules)
+Android Bundling failed 2887ms node_modules\expo-router\entry.js (5798 modules)
 Unable to resolve "D:\RL\ios-web-andr\node_modules\@expo\metro-config\build\async-require.js" from "node_modules\viem\_esm\utils\signature\recoverPublicKey.js"
    5 | export async function recoverPublicKey({ hash, signature, }) {
    6 |     const hashHex = isHex(hash) ? hash : toHex(hash);
@@ -22,7 +22,8 @@ Import stack:
  node_modules\@reown\appkit-wagmi-react-native\src\index.tsx
  | import "./client"
 
- app\_layout.web.tsx
+ app\_layout.tsx
  | import "@reown/appkit-wagmi-react-native"
 
  app (require.context)
+

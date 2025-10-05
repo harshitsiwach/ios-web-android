@@ -17,4 +17,21 @@ config.resolver.extraNodeModules = {
 // Add asset extensions if needed
 config.resolver.assetExts.push('bin');
 
+// Handle ES modules from node_modules that are causing issues with viem
+config.transformer.getTransformOptions = async () => ({
+  transform: {
+    experimentalImportSupport: false,
+    inlineRequires: true,
+  },
+});
+
+// Add resolver for ES modules
+config.resolver.unstable_enableSymlinks = false;
+
+// Add resolver for problematic packages
+config.resolver.nodeModulesPaths = [
+  ...config.resolver.nodeModulesPaths,
+  `${__dirname}/node_modules`,
+];
+
 module.exports = config;
