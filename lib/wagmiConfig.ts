@@ -1,5 +1,5 @@
 import { WagmiProvider } from 'wagmi';
-import { mainnet, polygon, arbitrum, optimism, base } from '@wagmi/core/chains';
+import { mainnet, polygon, arbitrum, optimism, base, bsc } from '@wagmi/core/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { defaultWagmiConfig } from '@reown/appkit-wagmi-react-native';
 
@@ -19,7 +19,7 @@ const metadata = {
 };
 
 // Supported chains
-const chains = [mainnet, polygon, arbitrum, optimism, base] as const;
+const chains = [mainnet, polygon, arbitrum, optimism, base, bsc] as const;
 
 // Create wagmi config
 const wagmiConfig = defaultWagmiConfig({ 
