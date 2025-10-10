@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { useAppKit, useAppKitAccount } from '@reown/appkit-wagmi-react-native';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
-import { shortenAddress } from '@/lib/utils';
+import { useAppKit } from '@reown/appkit-wagmi-react-native';
+import React, { useState } from 'react';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 
 const WalletButton = () => {
   const { address, isConnected } = useAccount();
@@ -76,7 +75,7 @@ const WalletButton = () => {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

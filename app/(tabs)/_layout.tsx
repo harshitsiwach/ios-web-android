@@ -2,12 +2,13 @@ import WalletButton from '@/components/WalletButton';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TabLayout() {
   const { colors, theme, toggleTheme } = useTheme();
-  const router = useRouter();
+
+  const isDark = theme === 'dark';
 
   return (
     <Tabs
@@ -24,40 +25,28 @@ export default function TabLayout() {
             <WalletButton />
             <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
               <Text style={[styles.themeToggleText, { color: colors.primary }]}>
-                {theme === 'dark' ? '☀️' : '🌙'}
+                {isDark ? '☀️' : '🌙'}
               </Text>
             </TouchableOpacity>
           </View>
         ),
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarActiveTintColor: isDark ? '#60A5FA' : colors.primary, // neon blue in dark mode
+        tabBarInactiveTintColor: isDark ? 'rgba(255,255,255,0.6)' : colors.textSecondary,
         tabBarBackground: () => (
           <BlurView
-            tint="dark"
-            intensity={60}
+            tint={isDark ? 'dark' : 'light'}
+            intensity={isDark ? 85 : 60}
             style={StyleSheet.absoluteFill}
           />
-          
         ),
-        tabBarStyle: {
-          position: 'relative',
-          bottom: 0,
-          left: 20,
-          right: 20,
-          elevation: 0,
-          borderRadius: 25,
-          height: 70,
-          borderTopWidth: 0,
-          overflow: 'hidden',
-          shadowColor: '#000',
-          shadowOpacity: 0.15,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: 5 },
-          backgroundColor : "black"
-        },
+        tabBarStyle: [
+          styles.tabBarBase,
+          isDark ? styles.tabBarDark : styles.tabBarLight,
+        ],
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
+          marginBottom: 5,
         },
       }}
     >
@@ -70,6 +59,7 @@ export default function TabLayout() {
               name={focused ? 'home' : 'home-outline'}
               size={22}
               color={color}
+              style={focused && isDark && styles.activeGlow}
             />
           ),
         }}
@@ -83,6 +73,7 @@ export default function TabLayout() {
               name={focused ? 'bar-chart' : 'bar-chart-outline'}
               size={22}
               color={color}
+              style={focused && isDark && styles.activeGlow}
             />
           ),
         }}
@@ -96,6 +87,7 @@ export default function TabLayout() {
               name={focused ? 'trending-up' : 'trending-up-outline'}
               size={22}
               color={color}
+              style={focused && isDark && styles.activeGlow}
             />
           ),
         }}
@@ -109,6 +101,7 @@ export default function TabLayout() {
               name={focused ? 'newspaper' : 'newspaper-outline'}
               size={22}
               color={color}
+              style={focused && isDark && styles.activeGlow}
             />
           ),
         }}
@@ -119,9 +112,10 @@ export default function TabLayout() {
           title: 'Aster',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? 'newspaper' : 'newspaper-outline'}
+              name={focused ? 'sparkles' : 'sparkles-outline'}
               size={22}
               color={color}
+              style={focused && isDark && styles.activeGlow}
             />
           ),
         }}
@@ -143,5 +137,47 @@ const styles = StyleSheet.create({
   },
   themeToggleText: {
     fontSize: 18,
+  },
+
+  // Base shared tabbar style
+  tabBarBase: {
+    position: 'relative',
+    bottom: 0,
+    left: 20,
+    right: 20,
+    borderRadius: 25,
+    height: 70,
+    borderTopWidth: 0,
+    overflow: 'hidden',
+  },
+
+  // 🔥 Dark theme look
+  tabBarDark: {
+    backgroundColor: 'rgba(10, 10, 15, 0.6)',
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+    elevation: 0, // remove black edge
+  },
+
+  // ☀️ Light theme fallback
+  tabBarLight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+
+  // Neon glow on active icons
+  activeGlow: {
+    textShadowColor: '#3B82F6',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
   },
 });
