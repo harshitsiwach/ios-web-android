@@ -40,6 +40,10 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCryptos, setSelectedCryptos] = useState<Record<string, 'up' | 'down' | null>>({});
   const [team, setTeam] = useState<TeamSelection[]>([]);
+  const [captainSelection, setCaptainSelection] = useState<string | null>(null); // Track captain selection
+  const [viceCaptainSelection, setViceCaptainSelection] = useState<string | null>(null); // Track vice-captain selection
+  const [contests, setContests] = useState<any[]>([]); // Store contest data from smart contract
+  const [contestsLoading, setContestsLoading] = useState<boolean>(true); // Loading state for contests
 
   // Switch to Base network when this screen is focused
   useFocusEffect(
@@ -134,19 +138,7 @@ export default function HomeScreen() {
       return;
     }
     
-    let teamMessage = `Your Team (${team.length}/5):
-`;
-    team.forEach((selection, index) => {
-      const emoji = selection.prediction === 'up' ? '📈' : '📉';
-      teamMessage += `${index + 1}. ${selection.crypto.name} (${selection.crypto.symbol.toUpperCase()}) ${emoji}
-`;
-    });
-    
-    Alert.alert(
-      'Your Team',
-      teamMessage,
-      [{ text: 'OK' }]
-    );
+    setIsVisible(true);
   };
 
   // Loading state
