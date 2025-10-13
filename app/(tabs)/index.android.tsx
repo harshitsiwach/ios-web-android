@@ -32,7 +32,10 @@ export default function HomeScreen() {
   const [team, setTeam] = useState<TeamSelection[]>([]);
  const [isVisible, setIsVisible] = useState(false);
  const [isContestModalVisible, setIsContestModalVisible] = useState(false);
- const scaleAnimation = new Animated.Value(1);
+ const [captainSelection, setCaptainSelection] = useState<string | null>(null); // Track captain selection
+ const [viceCaptainSelection, setViceCaptainSelection] = useState<string | null>(null); // Track vice-captain selection
+ const [contests, setContests] = useState<any[]>([]); // Store contest data from smart contract
+ const [contestsLoading, setContestsLoading] = useState<boolean>(true); // Loading state for contests
   // Switch to Base network when this screen is focused
   useFocusEffect(
     useCallback(() => {
@@ -115,31 +118,90 @@ export default function HomeScreen() {
       return;
     }
     
-    const newSelectedCryptos = {
-      ...selectedCryptos,
-      [id]: selectedCryptos[id] === prediction ? null : prediction
-    };
-    
-    const newSelectionsCount = Object.values(newSelectedCryptos).filter(Boolean).length;
-    
-    // If we're going from 4 to 5 selections, trigger animation
-    if (currentSelections < 5 && newSelectionsCount === 5) {
-      // Trigger animation
-      Animated.sequence([
-        Animated.timing(scaleAnimation, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnimation, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    setSelectedCryptos(prev => ({
+      ...prev,
+      [id]: prev[id] === prediction ? null : prediction
+    }));
+  };
+
+  // Function to select captain
+  const selectCaptain = (cryptoId: string) => {
+    if (viceCaptainSelection === cryptoId) {
+      Alert.alert('Selection Error', 'A token cannot be both Captain and Vice Captain.');
+      return;
     }
-    
-    setSelectedCryptos(newSelectedCryptos);
+    setCaptainSelection(cryptoId);
+  };
+
+  // Function to select vice captain
+  const selectViceCaptain = (cryptoId: string) => {
+    if (captainSelection === cryptoId) {
+      Alert.alert('Selection Error', 'A token cannot be both Captain and Vice Captain.');
+      return;
+    }
+    setViceCaptainSelection(cryptoId);
+  };
+
+  // Function to fetch contests from smart contract
+  const fetchContestsFromContract = async () => {
+    try {
+      setContestsLoading(true);
+      
+      // Dynamically import ethers to ensure compatibility with React Native
+      const ethers = await import('ethers');
+      
+      // Using the BSC Testnet RPC and contract address as per documentation
+      const RPC_URL = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+      const CONTRACT_ADDRESS = '0xa80700e570CE8652F001A23B77AC9353413525fC';
+      
+      // Load ABI from file
+      const contestABI = require('@/lib/abi/abi.json');
+      
+      // Create provider and contract instance
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, contestABI, provider);
+      
+      // Fetch active contest IDs
+      const contestIds = await contract.getActiveContestIds();
+      
+      // Fetch details for each contest
+      const fetchedContests = [];
+      for (const id of contestIds) {
+        try {
+          const contestDetails = await contract.getContestDetails(id);
+          
+          // Format contest data
+          const formattedContest = {
+            id: id.toString(),
+            name: contestDetails.name || `Contest #${id.toString()}`,
+            description: `Prize Pool: ${contestDetails.prizePool ? parseFloat(contestDetails.prizePool.toString()).toLocaleString() : 'N/A'} tokens`,
+            maxParticipants: contestDetails.maxParticipants ? parseInt(contestDetails.maxParticipants.toString()) : 0,
+            currentParticipants: contestDetails.currentParticipants ? parseInt(contestDetails.currentParticipants.toString()) : 0,
+            duration: contestDetails.duration ? parseInt(contestDetails.duration.toString()) : 0,
+            endTime: contestDetails.endTime ? parseInt(contestDetails.endTime.toString()) * 1000 : 0, // Convert to milliseconds
+            state: contestDetails.state,
+          };
+          
+          fetchedContests.push(formattedContest);
+        } catch (error) {
+          console.error(`Error fetching details for contest ${id}:`, error);
+        }
+      }
+      
+      setContests(fetchedContests);
+    } catch (error) {
+      console.error('Error fetching contests from contract:', error);
+      Alert.alert('Error', 'Failed to fetch contests from the smart contract. Showing sample data instead.');
+      
+      // Fallback to sample data if contract call fails
+      setContests([
+        { id: '1', name: 'Premiere League (Daily Challenge)', description: 'Predict price movements for the next 24 hours' },
+        { id: '2', name: 'NBA Fantasy Challenge (Weekly)', description: 'Predict price movements for the next 7 days' },
+        { id: '3', name: 'Grand Slam (Monthly)', description: 'Predict price movements for the next 30 days' },
+      ]);
+    } finally {
+      setContestsLoading(false);
+    }
   };
 
   // View team function
@@ -153,19 +215,7 @@ export default function HomeScreen() {
       return;
     }
     
-    let teamMessage = `Your Team (${team.length}/5):
-`;
-    team.forEach((selection, index) => {
-      const emoji = selection.prediction === 'up' ? '📈' : '📉';
-      teamMessage += `${index + 1}. ${selection.crypto.name} (${selection.crypto.symbol.toUpperCase()}) ${emoji}
-`;
-    });
-    
-    Alert.alert(
-      'Your Team',
-      teamMessage,
-      [{ text: 'OK' }]
-    );
+    setIsVisible(true);
   };
 
   // Loading state
@@ -260,43 +310,81 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Team List */}
+          {/* Team List with Captain and Vice Captain Selection */}
           {team.length > 0 ? (
-            team.map((selection, index) => (
-              <View key={selection.crypto.id} style={[styles.teamItem, { borderBottomColor: colors.border }]}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  {selection.crypto.image ? (
-                    <Image source={{ uri: selection.crypto.image }} style={styles.cryptoLogoSmall} />
-                  ) : (
-                    <View style={[styles.cryptoLogoPlaceholder, { backgroundColor: colors.cardBackground }]} />
-                  )}
-                  <Text style={[styles.coinName, { color: colors.text }]}>{selection.crypto.name}</Text>
-                </View>
-                <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-                  <Text style={[styles.prediction, { color: selection.prediction === 'up' ? colors.up : colors.down, fontWeight: "bold" }]}>
-                    {selection.prediction.toUpperCase()}
-                  </Text>
-                  <TouchableOpacity onPress={() => handleCryptoSelect(selection.crypto.id, selection.prediction)}>
-                    <Text style={{ color: colors.primary, fontWeight: "bold" }}>
-                      {selection.prediction === 'up' ? '📈' : '📉'}
+            team.map((selection, index) => {
+              const isCaptain = captainSelection === selection.crypto.id;
+              const isViceCaptain = viceCaptainSelection === selection.crypto.id;
+              
+              return (
+                <View key={selection.crypto.id} style={[styles.teamItem, { borderBottomColor: colors.border }]}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    {selection.crypto.image ? (
+                      <Image source={{ uri: selection.crypto.image }} style={styles.cryptoLogoSmall} />
+                    ) : (
+                      <View style={[styles.cryptoLogoPlaceholder, { backgroundColor: colors.cardBackground }]} />
+                    )}
+                    <Text style={[styles.coinName, { color: colors.text }]}>{selection.crypto.name}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", gap: 5 }}>
+                      <TouchableOpacity 
+                        style={[
+                          styles.roleButton, 
+                          { backgroundColor: isCaptain ? colors.up : "#333" }
+                        ]}
+                        onPress={() => selectCaptain(selection.crypto.id)}
+                      >
+                        <Text style={styles.roleButtonText}>C</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[
+                          styles.roleButton, 
+                          { backgroundColor: isViceCaptain ? colors.primary : "#333" }
+                        ]}
+                        onPress={() => selectViceCaptain(selection.crypto.id)}
+                      >
+                        <Text style={styles.roleButtonText}>VC</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={[styles.prediction, { color: selection.prediction === 'up' ? colors.up : colors.down, fontWeight: "bold" }]}>
+                      {selection.prediction.toUpperCase()}
                     </Text>
-                  </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleCryptoSelect(selection.crypto.id, selection.prediction)}>
+                      <Text style={{ color: colors.primary, fontWeight: "bold" }}>
+                        {selection.prediction === 'up' ? '📈' : '📉'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            ))
+              );
+            })
           ) : (
             <Text style={[styles.emptyTeamText, { color: colors.textSecondary }]}>No tokens selected yet</Text>
           )}
 
           {/* Submit Button */}
           <TouchableOpacity 
-            style={[styles.submitBtn, { backgroundColor: '#3B82F6' }]}
-            onPress={() => {
+            style={[styles.submitBtn, { backgroundColor: colors.primary }]}
+            onPress={async () => {
               if (team.length === 0) {
                 Alert.alert('Empty Team', 'Please select at least one token for your team.', [{ text: 'OK' }]);
                 return;
               }
+              
+              if (captainSelection === null || viceCaptainSelection === null) {
+                Alert.alert(
+                  'Selection Required', 
+                  'Please select both a Captain and a Vice Captain before submitting your team.',
+                  [{ text: 'OK' }]
+                );
+                return;
+              }
+              
               setIsVisible(false);
+              
+              // Fetch contests before showing the modal
+              await fetchContestsFromContract();
               setIsContestModalVisible(true);
             }}
           >
@@ -324,34 +412,42 @@ export default function HomeScreen() {
               </View>
 
               {/* Contest Selection List */}
-              <View style={styles.contestList}>
-                {[
-                  { id: 'daily', name: 'Premiere League (Daily Challenge)', description: 'Predict price movements for the next 24 hours' },
-                  { id: 'weekly', name: 'NBA Fantasy Challenge (Weekly Challenge)', description: 'Predict price movements for the next 7 days' },
-                  { id: 'monthly', name: 'Grand Slam (Monthly Challenge)', description: 'Predict price movements for the next 30 days' },
-                  
-                ].map((contest) => (
-                  <TouchableOpacity
-                    key={contest.id}
-                    style={[styles.contestItem, { borderBottomColor: colors.border }]}
-                    onPress={() => {
-                      // Here you would handle contest selection
-                      Alert.alert(
-                        'Contest Selected',
-                        `You selected: ${contest.name}\n\n${contest.description}`,
-                        [{ text: 'OK' }]
-                      );
-                      setIsContestModalVisible(false);
-                    }}
-                  >
-                    <View>
-                      <Text style={[styles.contestName, { color: colors.text }]}>{contest.name}</Text>
-                      <Text style={[styles.contestDescription, { color: colors.textSecondary }]}>{contest.description}</Text>
+              {contestsLoading ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={{ color: colors.text, marginTop: 10 }}>Loading contests...</Text>
+                </View>
+              ) : (
+                <View style={styles.contestList}>
+                  {contests.length > 0 ? (
+                    contests.map((contest) => (
+                      <TouchableOpacity
+                        key={contest.id}
+                        style={[styles.contestItem, { borderBottomColor: colors.border }]}
+                        onPress={() => {
+                          // Here you would handle contest selection and team submission
+                          Alert.alert(
+                            'Contest Selected',
+                            `You selected: ${contest.name}\n\n${contest.description}`,
+                            [{ text: 'OK' }]
+                          );
+                          setIsContestModalVisible(false);
+                        }}
+                      >
+                        <View>
+                          <Text style={[styles.contestName, { color: colors.text }]}>{contest.name}</Text>
+                          <Text style={[styles.contestDescription, { color: colors.textSecondary }]}>{contest.description}</Text>
+                        </View>
+                        <Text style={{ color: colors.primary }}>→</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <View style={{ padding: 20, alignItems: 'center' }}>
+                      <Text style={{ color: colors.text, textAlign: 'center' }}>No active contests available at the moment</Text>
                     </View>
-                    <Text style={{ color: colors.primary }}>→</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                  )}
+                </View>
+              )}
             </View>
           </Modal>
 
@@ -702,5 +798,17 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     fontSize: 18,
+  },
+  roleButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    minWidth: 30,
+    alignItems: 'center',
+  },
+  roleButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

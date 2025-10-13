@@ -1,5 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { useEffect, useState } from 'react';
+import { GlassView } from 'expo-liquid-glass-view';
+import { useState, useEffect } from 'react';
+import { router } from 'expo-router';
 import { ActivityIndicator, Image, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Define the crypto data structure
@@ -18,45 +20,19 @@ type TeamSelection = {
   prediction: 'up' | 'down';
 };
 
-// Custom Alert component for web
-const CustomAlert = ({ visible, title, message, onClose }: { visible: boolean; title: string; message: string; onClose: () => void }) => {
-  const { colors } = useTheme();
-  
-  if (!visible) return null;
-  
-  return (
-    <View style={styles.modalOverlay}>
-      <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
-        <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
-        <Text style={[styles.modalMessage, { color: colors.text }]}>{message}</Text>
-        <TouchableOpacity 
-          style={[styles.modalButton, { backgroundColor: colors.primary }]} 
-          onPress={onClose}
-        >
-          <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>OK</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+// Function to show alerts on web
+const showAlert = (title: string, message: string) => {
+  alert(`${title}\n${message}`);
 };
 
 export default function HomeScreen() {
-  const { theme, colors, toggleTheme } = useTheme();
+  const { colors, theme, toggleTheme } = useTheme();
   const [cryptos, setCryptos] = useState<Cryptocurrency[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCryptos, setSelectedCryptos] = useState<Record<string, 'up' | 'down' | null>>({});
   const [team, setTeam] = useState<TeamSelection[]>([]);
-  const [alertVisible, setAlertVisible] = useState(false);
-  const [alertTitle, setAlertTitle] = useState('');
-  const [alertMessage, setAlertMessage] = useState('');
-
-  // Show custom alert
-  const showAlert = (title: string, message: string) => {
-    setAlertTitle(title);
-    setAlertMessage(message);
-    setAlertVisible(true);
-  };
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch crypto data from CoinGecko API
   const fetchCryptoData = async () => {
@@ -99,6 +75,12 @@ export default function HomeScreen() {
     fetchCryptoData();
   };
 
+  // Filter cryptos based on search query
+  const filteredCryptos = cryptos.filter(crypto => 
+    crypto.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    crypto.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Handle crypto selection for up/down prediction
   const handleCryptoSelect = (id: string, prediction: 'up' | 'down') => {
     const currentSelections = Object.values(selectedCryptos).filter(Boolean).length;
@@ -128,16 +110,11 @@ export default function HomeScreen() {
       return;
     }
     
-    let teamMessage = `Your Team (${team.length}/5):
-
-`;
-    team.forEach((selection, index) => {
-      const emoji = selection.prediction === 'up' ? '📈' : '📉';
-      teamMessage += `${index + 1}. ${selection.crypto.name} (${selection.crypto.symbol.toUpperCase()}) ${emoji}
-`;
+    // Navigate to the team panel screen with team data
+    router.push({
+      pathname: '/(tabs)/team-panel',
+      params: { teamData: encodeURIComponent(JSON.stringify(team)) }
     });
-    
-    showAlert('Your Team', teamMessage);
   };
 
   // Loading state
@@ -154,133 +131,117 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <CustomAlert 
-        visible={alertVisible}
-        title={alertTitle}
-        message={alertMessage}
-        onClose={() => setAlertVisible(false)}
-      />
-      
-      <ScrollView
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
-            colors={[colors.primary]} 
-            tintColor={colors.primary} 
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.cardBackground }]}>
+        <View style={styles.headerContent}>
+          <Image 
+            source={{ uri: 'https://placehold.co/40' }} 
+            style={styles.logo}
           />
-        }
-      >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={[styles.header, { backgroundColor: colors.cardBackground }]}>
-            <View style={styles.headerContent}>
-              <Image 
-                source={{ uri: 'https://placehold.co/40' }} 
-                style={styles.logo}
-              />
-              <View style={styles.headerText}>
-                <Text style={[styles.title, { color: colors.text }]}>Crypto Markets</Text>
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Real-time prices & trends</Text>
-              </View>
-              <View style={styles.headerActions}>
-                <TouchableOpacity style={styles.actionButton} onPress={viewTeam}>
-                  <Text style={[styles.actionText, { color: colors.primary }]}>View Team</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton} onPress={toggleTheme}>
-                  <Text style={[styles.actionText, { color: colors.primary }]}>
-                    {theme === 'dark' ? '☀️' : '🌙'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Team selection indicator */}
-          {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length > 0 && (
-            <View style={[styles.teamIndicator, { backgroundColor: colors.cardBackground }]}>
-              <Text style={[styles.teamText, { color: colors.textSecondary }]}>
-                Team: {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length}/5 tokens selected
-              </Text>
-            </View>
-          )}
-
-          {/* Crypto list */}
-          <View style={styles.cryptoList}>
-            {cryptos.map((item) => (
-              <View 
-                key={item.id} 
-                style={[
-                  styles.cryptoItem, 
-                  { backgroundColor: colors.cardBackground },
-                  selectedCryptos[item.id] && {
-                    borderColor: selectedCryptos[item.id] === 'up' ? colors.up : colors.down,
-                    borderWidth: 2,
-                  }
-                ]}
-              >
-                <View style={styles.cryptoRow}>
-                  {/* Crypto logo */}
-                  {item.image ? (
-                    <Image 
-                      source={{ uri: item.image }} 
-                      style={styles.cryptoLogo}
-                    />
-                  ) : (
-                    <View style={[styles.cryptoLogoPlaceholder, { backgroundColor: colors.cardBackground }]} />
-                  )}
-                  
-                  <View style={styles.cryptoInfo}>
-                    <Text style={[styles.cryptoName, { color: colors.text }]}>{item.name}</Text>
-                    <Text style={[styles.cryptoSymbol, { color: colors.textSecondary }]}>{item.symbol.toUpperCase()}</Text>
-                  </View>
-                  
-                  <View style={styles.cryptoPriceContainer}>
-                    <Text style={[styles.cryptoPrice, { color: colors.text }]}>
-                      ${item.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </Text>
-                    <Text 
-                      style={[
-                        styles.cryptoChange, 
-                        { color: item.price_change_percentage_24h >= 0 ? colors.up : colors.down }
-                      ]}
-                    >
-                      {item.price_change_percentage_24h >= 0 ? '↑' : '↓'} 
-                      {Math.abs(item.price_change_percentage_24h).toFixed(2)}%
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.cryptoActions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.actionButtonSmall,
-                        selectedCryptos[item.id] === 'up' && { backgroundColor: colors.up + '20' }
-                      ]}
-                      onPress={() => handleCryptoSelect(item.id, 'up')}
-                    >
-                      <Text style={[
-                        styles.actionTextSmall,
-                        { color: selectedCryptos[item.id] === 'up' ? colors.up : colors.textSecondary }
-                      ]}>↑</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.actionButtonSmall,
-                        selectedCryptos[item.id] === 'down' && { backgroundColor: colors.down + '20' }
-                      ]}
-                      onPress={() => handleCryptoSelect(item.id, 'down')}
-                    >
-                      <Text style={[
-                        styles.actionTextSmall,
-                        { color: selectedCryptos[item.id] === 'down' ? colors.down : colors.textSecondary }
-                      ]}>↓</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            ))}
+          <View style={styles.headerTextContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Crypto Markets</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Real-time prices & trends</Text>
           </View>
         </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton} onPress={viewTeam}>
+            <Text style={[styles.headerButtonText, { color: colors.text }]}>View Team</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.themeButton, { backgroundColor: colors.primary }]} 
+            onPress={toggleTheme}
+          >
+            <Text style={styles.themeButtonText}>
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Team selection indicator */}
+      {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length > 0 && (
+        <View style={[styles.teamIndicator, { backgroundColor: colors.cardBackground }]}>
+          <Text style={{ color: colors.textSecondary }}>
+            Team: {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length}/5 tokens selected
+          </Text>
+        </View>
+      )}
+
+      {/* Search bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={[styles.searchInput, { backgroundColor: colors.cardBackground, color: colors.text }]}
+          placeholder="Search cryptocurrencies..."
+          placeholderTextColor={colors.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
+      {/* Crypto list */}
+      <ScrollView
+        style={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+      >
+        {filteredCryptos.map((item) => (
+          <View 
+            key={item.id} 
+            style={[
+              styles.cryptoItem, 
+              { backgroundColor: colors.cardBackground, borderColor: colors.border, borderWidth: 1 },
+              selectedCryptos[item.id] && { borderLeftWidth: 4, borderLeftColor: selectedCryptos[item.id] === 'up' ? colors.up : colors.down }
+            ]}
+          >
+            <View style={styles.cryptoInfo}>
+              {item.image ? (
+                <Image source={{ uri: item.image }} style={styles.cryptoLogo} />
+              ) : (
+                <View style={[styles.cryptoLogo, styles.cryptoLogoPlaceholder]} />
+              )}
+              <View style={styles.cryptoDetails}>
+                <Text style={[styles.cryptoName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.cryptoSymbol, { color: colors.textSecondary }]}>{item.symbol.toUpperCase()}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.cryptoPriceContainer}>
+              <Text style={[styles.cryptoPrice, { color: colors.text }]}>
+                ${item.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Text>
+              <Text 
+                style={[
+                  styles.cryptoChange, 
+                  { color: item.price_change_percentage_24h >= 0 ? colors.up : colors.down }
+                ]}
+              >
+                {item.price_change_percentage_24h >= 0 ? '↑' : '↓'} {Math.abs(item.price_change_percentage_24h).toFixed(2)}%
+              </Text>
+            </View>
+            
+            <View style={styles.predictionButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.predictionButton,
+                  selectedCryptos[item.id] === 'up' && { backgroundColor: colors.up }
+                ]}
+                onPress={() => handleCryptoSelect(item.id, 'up')}
+              >
+                <Text style={styles.predictionButtonText}>📈</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.predictionButton,
+                  selectedCryptos[item.id] === 'down' && { backgroundColor: colors.down }
+                ]}
+                onPress={() => handleCryptoSelect(item.id, 'down')}
+              >
+                <Text style={styles.predictionButtonText}>📉</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );
@@ -295,22 +256,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
-    padding: 16,
-  },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
   },
   header: {
-    borderRadius: 16,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
   },
   headerContent: {
     flexDirection: 'row',
@@ -321,58 +275,68 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
   },
-  headerText: {
-    flex: 1,
-    marginLeft: 10,
+  headerTextContainer: {
+    marginLeft: 12,
   },
-  title: {
-    fontSize: 20,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
   },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 2,
+  headerSubtitle: {
+    fontSize: 12,
   },
   headerActions: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
-  actionButton: {
-    marginLeft: 10,
+  headerButton: {
     padding: 8,
+    marginRight: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
-  actionText: {
-    fontSize: 16,
+  headerButtonText: {
     fontWeight: '500',
   },
+  themeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  themeButtonText: {
+    fontSize: 16,
+  },
   teamIndicator: {
+    marginHorizontal: 16,
+    padding: 8,
     borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    alignSelf: 'center',
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    alignItems: 'center',
   },
-  teamText: {
-    fontSize: 14,
+  searchContainer: {
+    margin: 16,
   },
-  cryptoList: {
-    paddingBottom: 16,
+  searchInput: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    fontSize: 16,
+  },
+  listContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
   },
   cryptoItem: {
-    borderRadius: 16,
-    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    borderRadius: 8,
   },
-  cryptoRow: {
+  cryptoInfo: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -382,83 +346,42 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   cryptoLogoPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    backgroundColor: '#ccc',
   },
-  cryptoInfo: {
-    flex: 1,
-    marginLeft: 10,
+  cryptoDetails: {
+    marginLeft: 12,
   },
   cryptoName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   cryptoSymbol: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 12,
   },
   cryptoPriceContainer: {
     alignItems: 'flex-end',
-    marginRight: 15,
+    marginRight: 12,
   },
   cryptoPrice: {
     fontSize: 16,
     fontWeight: '600',
   },
   cryptoChange: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
   },
-  cryptoActions: {
-    flexDirection: 'row',
+  predictionButtons: {
+    flexDirection: 'column',
   },
-  actionButtonSmall: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
+  predictionButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: '#333',
     alignItems: 'center',
-    marginLeft: 5,
+    marginBottom: 4,
   },
-  actionTextSmall: {
+  predictionButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  modalContent: {
-    width: '80%',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  modalMessage: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  modalButtonText: {
-    fontWeight: 'bold',
   },
 });
