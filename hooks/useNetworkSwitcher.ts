@@ -1,11 +1,12 @@
 import { useChainId, useSwitchChain } from 'wagmi';
-import { base, polygon, arbitrum } from '@wagmi/core/chains';
+import { base, polygon, arbitrum, bsc } from '@wagmi/core/chains';
 
 // Define network names mapping
 const NETWORK_NAMES: { [key: number]: string } = {
   [base.id]: 'Base',
   [polygon.id]: 'Polygon',
   [arbitrum.id]: 'Arbitrum',
+  [bsc.id]: 'Binance Smart Chain',
   1: 'Ethereum',
   5: 'Goerli',
   11155111: 'Sepolia',
@@ -15,6 +16,7 @@ const NETWORK_NAMES: { [key: number]: string } = {
   80001: 'Polygon Mumbai',
   42161: 'Arbitrum One',
   421613: 'Arbitrum Goerli',
+  56: 'Binance Smart Chain',
 };
 
 export const useNetworkSwitcher = () => {
@@ -39,6 +41,12 @@ export const useNetworkSwitcher = () => {
     }
   };
 
+  const switchToBsc = () => {
+    if (chainId !== bsc.id) {
+      switchChain({ chainId: bsc.id });
+    }
+  };
+
   const getNetworkName = (chainId?: number): string => {
     if (!chainId) return 'Unknown';
     return NETWORK_NAMES[chainId] || `Chain ${chainId}`;
@@ -49,6 +57,7 @@ export const useNetworkSwitcher = () => {
     switchToBase,
     switchToPolygon,
     switchToArbitrum,
+    switchToBsc,
     getNetworkName,
     isSwitching: isPending,
   };

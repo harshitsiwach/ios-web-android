@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { useAccount, useConnect, useDisconnect, useBalance, useChainId } from 'wagmi';
+import { useAppKit, useAppKitAccount } from '@reown/appkit-wagmi-react-native';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
 import { useAppKit } from '@reown/appkit-wagmi-react-native';
 import React, { useState } from 'react';
@@ -10,6 +14,8 @@ const WalletButton = () => {
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
   const { getNetworkName } = useNetworkSwitcher();
+  const chainId = useChainId();
+  const { data: balanceData } = useBalance({ address, chainId });
   const [isModalVisible, setModalVisible] = useState(false);
 
   const handleConnect = () => {
@@ -36,7 +42,9 @@ const WalletButton = () => {
     <>
       <TouchableOpacity style={styles.button} onPress={handleConnect}>
         <Text style={styles.buttonText}>
-          {isConnected ? truncateAddress(address as string) : 'Connect Wallet'}
+          {isConnected 
+            ? `${truncateAddress(address as string)} (${getNetworkName(chainId)})` 
+            : 'Connect Wallet'}
         </Text>
       </TouchableOpacity>
 
@@ -53,7 +61,9 @@ const WalletButton = () => {
             <Text style={styles.addressLabel}>Address:</Text>
             <Text style={styles.addressText}>{address}</Text>
             <Text style={styles.networkLabel}>Network:</Text>
-            <Text style={styles.networkText}>{getNetworkName()}</Text>
+            <Text style={styles.networkText}>{getNetworkName(chainId)}</Text>
+            <Text style={styles.balanceLabel}>Wallet Balance:</Text>
+            <Text style={styles.balanceText}>{balanceData ? `${balanceData.formatted} ${balanceData.symbol}` : 'Loading...'}</Text>
             <TouchableOpacity 
               style={styles.disconnectButton} 
               onPress={handleDisconnect}
@@ -117,10 +127,21 @@ const styles = StyleSheet.create({
   },
   networkText: {
     fontSize: 16,
-    marginBottom: 20,
+    marginBottom: 10,
     fontFamily: 'monospace',
   },
   networkLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    alignSelf: 'flex-start',
+    marginTop: 5,
+  },
+  balanceText: {
+    fontSize: 16,
+    marginBottom: 20,
+    fontFamily: 'monospace',
+  },
+  balanceLabel: {
     fontSize: 14,
     fontWeight: 'bold',
     alignSelf: 'flex-start',
