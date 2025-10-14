@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { ConnectWallet, useAddress, useConnectionStatus, useBalance, useChainId } from '@thirdweb-dev/react-native';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
+import { ConnectWallet, useAddress, useBalance, useChainId, useConnectionStatus } from '@thirdweb-dev/react-native';
+import React, { useState } from 'react';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const WalletButton = () => {
   const address = useAddress();
@@ -91,7 +91,7 @@ const WalletButton = () => {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

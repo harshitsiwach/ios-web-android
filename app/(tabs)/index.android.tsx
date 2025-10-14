@@ -1,8 +1,9 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
+import { BlurView } from 'expo-blur';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useState, } from 'react';
+import { ActivityIndicator, Alert, Animated, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Modal from "react-native-modal";
 // Define the crypto data structure
 type Cryptocurrency = {
@@ -235,7 +236,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: 'rgba(10, 12, 22, 0.9)'}]}>
       <ScrollView
         refreshControl={
           <RefreshControl 
@@ -248,23 +249,21 @@ export default function HomeScreen() {
       >
         <View style={styles.content}>
           {/* Header */}
-          <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground }]}>
-            <View style={styles.searchIconContainer}>
-              <Text style={styles.searchIcon}>🔍</Text>
-            </View>
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search cryptos..."
-              placeholderTextColor={colors.textSecondary}
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-            />
-            {searchTerm.length > 0 && (
-              <TouchableOpacity style={styles.clearButton} onPress={() => setSearchTerm('')}>
-                <Text style={[styles.clearButtonText, { color: colors.text }]}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          
+        <View style={styles.searchBar}>
+          <TextInput
+            placeholder="Search cryptos..."
+            placeholderTextColor="#8b93a1"
+            style={styles.searchInput}
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+          {searchTerm.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchTerm('')}>
+              <Text style={styles.clearText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
           <View style={[styles.header, { backgroundColor: colors.cardBackground }]}>
             <View style={styles.headerContent}>
               <Image 
@@ -276,9 +275,7 @@ export default function HomeScreen() {
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Real-time prices & trends</Text>
               </View>
               <View style={styles.headerActions}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => setIsVisible(true)} >
-                  <Text style={[styles.actionText, { color: colors.primary }]}>View Team</Text>
-                </TouchableOpacity>
+                
 
 
                   {/* modal */}
@@ -464,88 +461,81 @@ export default function HomeScreen() {
 
           {/* Team selection indicator */}
           {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length > 0 && (
-            <View style={[styles.teamIndicator, { backgroundColor: colors.cardBackground }]}>
-              <Text style={[styles.teamText, { color: colors.textSecondary }]}>
-                Team: {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length}/5 tokens selected
-              </Text>
-            </View>
+            <TouchableOpacity 
+              onPress={() => {
+                if (Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length >= 5) {
+                  setIsVisible(true);
+                }
+              }}
+            >
+              <Animated.View style={[styles.teamIndicator, { backgroundColor: colors.cardBackground, transform: [{ scale: scaleAnimation }] }]}>
+                
+                <Text style={[styles.teamText, { color: colors.textSecondary }]}>
+                  {Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length >= 5 ? '⚡ View Team' : `Team: ${Object.keys(selectedCryptos).filter(id => selectedCryptos[id] !== null).length}/5 tokens selected`}
+                </Text>
+              </Animated.View>
+            </TouchableOpacity>
           )}
 
           {/* Crypto list */}
-          <View style={styles.cryptoList}>
-            {filteredCryptos.map((item) => (
-              <View 
-                key={item.id} 
-                style={[
-                  styles.cryptoItem, 
-                  { backgroundColor: colors.cardBackground },
-                  selectedCryptos[item.id] && {
-                    borderColor: selectedCryptos[item.id] === 'up' ? colors.up : colors.down,
-                    borderWidth: 2,
-                  }
-                ]}
-              >
-                <View style={styles.cryptoRow}>
-                  {/* Crypto logo */}
-                  {item.image ? (
-                    <Image 
-                      source={{ uri: item.image }} 
-                      style={styles.cryptoLogo}
-                    />
-                  ) : (
-                    <View style={[styles.cryptoLogoPlaceholder, { backgroundColor: colors.cardBackground }]} />
-                  )}
-                  
-                  <View style={styles.cryptoInfo}>
-                    <Text style={[styles.cryptoName, { color: colors.text }]}>{item.name}</Text>
-                    <Text style={[styles.cryptoSymbol, { color: colors.textSecondary }]}>{item.symbol.toUpperCase()}</Text>
-                  </View>
-                  
-                  <View style={styles.cryptoPriceContainer}>
-                    <Text style={[styles.cryptoPrice, { color: colors.text }]}>
-                      ${item.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </Text>
-                    <Text 
-                      style={[
-                        styles.cryptoChange, 
-                        { color: item.price_change_percentage_24h >= 0 ? colors.up : colors.down }
-                      ]}
-                    >
-                      {item.price_change_percentage_24h >= 0 ? '↑' : '↓'} 
-                      {Math.abs(item.price_change_percentage_24h).toFixed(2)}%
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.cryptoActions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.actionButtonSmall,
-                        selectedCryptos[item.id] === 'up' && { backgroundColor: colors.up + '20' }
-                      ]}
-                      onPress={() => handleCryptoSelect(item.id, 'up')}
-                    >
-                      <Text style={[
-                        styles.actionTextSmall,
-                        { color: selectedCryptos[item.id] === 'up' ? colors.up : colors.textSecondary }
-                      ]}>↑</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.actionButtonSmall,
-                        selectedCryptos[item.id] === 'down' && { backgroundColor: colors.down + '20' }
-                      ]}
-                      onPress={() => handleCryptoSelect(item.id, 'down')}
-                    >
-                      <Text style={[
-                        styles.actionTextSmall,
-                        { color: selectedCryptos[item.id] === 'down' ? colors.down : colors.textSecondary }
-                      ]}>↓</Text>
-                    </TouchableOpacity>
-                  </View>
+        
+        <View style={{ marginTop: 10 }}>
+          {filteredCryptos.map(item => (
+            <BlurView key={item.id} intensity={40} tint="dark" style={styles.cryptoCard}>
+              <View style={styles.cryptoRow}>
+                <Image source={{ uri: item.image }} style={styles.cryptoLogo} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cryptoName}>{item.name}</Text>
+                  <Text style={styles.cryptoSymbol}>{item.symbol.toUpperCase()}</Text>
                 </View>
+                <View style={styles.priceContainer}>
+                  <Text style={styles.price}>${item.current_price.toLocaleString()}</Text>
+                  <Text
+                    style={[
+                      styles.change,
+                      { color: item.price_change_percentage_24h >= 0 ? '#00e676' : '#ff5252' },
+                    ]}
+                  >
+                    {item.price_change_percentage_24h >= 0 ? '▲' : '▼'}{' '}
+                    {Math.abs(item.price_change_percentage_24h).toFixed(2)}%
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleCryptoSelect(item.id, 'up')}
+                  style={[
+                    styles.actionBtn,
+                    selectedCryptos[item.id] === 'up' && styles.selectedUp,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.actionText,
+                      { color: selectedCryptos[item.id] === 'up' ? '#00e676' : '#9aa0b3' },
+                    ]}
+                  >
+                    ↑
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleCryptoSelect(item.id, 'down')}
+                  style={[
+                    styles.actionBtn,
+                    selectedCryptos[item.id] === 'down' && styles.selectedDown,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.actionText,
+                      { color: selectedCryptos[item.id] === 'down' ? '#ff5252' : '#9aa0b3' },
+                    ]}
+                  >
+                    ↓
+                  </Text>
+                </TouchableOpacity>
               </View>
-            ))}
-          </View>
+            </BlurView>
+          ))}
+        </View>
         </View>
       </ScrollView>
     </View>
@@ -628,11 +618,14 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
+    
   },
+  
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    
   },
 
 
@@ -657,6 +650,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 15,
+    paddingVertical: 8,
+  },
+  clearText: {
+    color: '#9aa0b3',
+    fontSize: 18,
+    padding: 5,
+  },
   logo: {
     width: 40,
     height: 40,
@@ -665,6 +677,7 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     marginLeft: 10,
+    
   },
   title: {
     fontSize: 20,
@@ -700,69 +713,67 @@ const styles = StyleSheet.create({
   teamText: {
     fontSize: 14,
   },
-  cryptoList: {
-    paddingBottom: 16,
-  },
-  cryptoItem: {
+   cryptoCard: {
     borderRadius: 16,
-    padding: 15,
+    padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   cryptoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   cryptoLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  
-  cryptoInfo: {
-    flex: 1,
-    marginLeft: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    marginRight: 10,
   },
   cryptoName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cryptoSymbol: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  cryptoPriceContainer: {
-    alignItems: 'flex-end',
-    marginRight: 15,
-  },
-  cryptoPrice: {
-    fontSize: 16,
+    color: '#fff',
+    fontSize: 15,
     fontWeight: '600',
   },
-  cryptoChange: {
-    fontSize: 14,
-    fontWeight: '500',
+  cryptoSymbol: {
+    color: '#9aa0b3',
+    fontSize: 13,
     marginTop: 2,
   },
-  cryptoActions: {
-    flexDirection: 'row',
+    priceContainer: {
+    alignItems: 'flex-end',
+    marginRight: 10,
   },
-  actionButtonSmall: {
+  price: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  change: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  actionBtn: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    justifyContent: 'center',
+    marginLeft: 6,
     alignItems: 'center',
-    marginLeft: 5,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  actionTextSmall: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  selectedUp: {
+    backgroundColor: 'rgba(0,230,118,0.15)',
+    borderWidth: 1,
+    borderColor: '#00e676',
   },
+  selectedDown: {
+    backgroundColor: 'rgba(255,82,82,0.15)',
+    borderWidth: 1,
+    borderColor: '#ff5252',
+  },
+  
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -783,12 +794,7 @@ const styles = StyleSheet.create({
   searchIcon: {
     fontSize: 18,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    padding: 0, // Reset default padding
-    marginRight: 5, // Add margin to make space for clear button
-  },
+  
   clearButton: {
     marginLeft: 10,
     justifyContent: 'center',
