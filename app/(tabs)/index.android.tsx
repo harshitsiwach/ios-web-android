@@ -22,7 +22,7 @@ type TeamSelection = {
 
 export default function HomeScreen() {
   const { theme, colors, toggleTheme } = useTheme();
-  const { switchToBase, getNetworkName, currentChain } = useNetworkSwitcher();
+  const { getNetworkName, currentChain, switchChain } = useNetworkSwitcher();
   const [cryptos, setCryptos] = useState<Cryptocurrency[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -47,13 +47,13 @@ export default function HomeScreen() {
             { 
               text: 'Switch', 
               onPress: () => {
-                switchToBase();
+                switchChain('base');
               }
             }
           ]
         );
       }
-    }, [currentChain, getNetworkName, switchToBase])
+    }, [currentChain, getNetworkName, switchChain])
   );
 
   // Fetch crypto data from CoinGecko API
@@ -146,9 +146,7 @@ export default function HomeScreen() {
     try {
       setContestsLoading(true);
       
-      // Dynamically import ethers to ensure compatibility with React Native
-      const ethers = await import('ethers');
-      
+      // Using Thirdweb to interact with the smart contract
       // Using the BSC Testnet RPC and contract address as per documentation
       const RPC_URL = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
       const CONTRACT_ADDRESS = '0xa80700e570CE8652F001A23B77AC9353413525fC';
@@ -156,9 +154,16 @@ export default function HomeScreen() {
       // Load ABI from file
       const contestABI = require('@/lib/abi/abi.json');
       
+      // Create a contract instance using Thirdweb's read contract functionality
+      // For now, we'll use a simple fetch approach since Thirdweb's contract interaction
+      // requires a connected wallet for write operations but we can read publicly
+      
       // Create provider and contract instance
-      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, contestABI, provider);
+      const { Contract } = await import('@ethersproject/contracts');
+      const { JsonRpcProvider } = await import('@ethersproject/providers');
+      
+      const provider = new JsonRpcProvider(RPC_URL);
+      const contract = new Contract(CONTRACT_ADDRESS, contestABI, provider);
       
       // Fetch active contest IDs
       const contestIds = await contract.getActiveContestIds();

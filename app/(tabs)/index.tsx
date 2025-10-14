@@ -1,8 +1,8 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { useWallet } from '@/hooks/use-wallet';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
-import { AppKitButton } from '@reown/appkit-wagmi-react-native';
 import { useFocusEffect } from 'expo-router';
+import { ConnectWallet } from '@thirdweb-dev/react-native';
 import { useCallback } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -66,9 +66,13 @@ export default function HomeScreen() {
           )}
         </View>
         
-        {/* Reown Wallet Connection Button */}
+        {/* Thirdweb Wallet Connection Button */}
         <View style={styles.walletButtonContainer}>
-          <AppKitButton />
+          <ConnectWallet 
+            theme="dark"
+            btnTitle="Connect Wallet"
+            modalSize="compact"
+          />
         </View>
         
         {/* Custom connect button */}

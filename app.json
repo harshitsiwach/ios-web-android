@@ -21,7 +21,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.glass"
+      "package": "com.anonymous.glass",
+      "minSdkVersion": 26
     },
     "web": {
       "output": "static",

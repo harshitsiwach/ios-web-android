@@ -18,7 +18,6 @@ import {
   Platform
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import CryptoJS from 'crypto-js';
 
 // Define the market data structures
 type Ticker24Hr = {

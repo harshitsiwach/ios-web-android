@@ -1,33 +1,27 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { useAccount, useConnect, useDisconnect, useBalance, useChainId } from 'wagmi';
-import { useAppKit, useAppKitAccount } from '@reown/appkit-wagmi-react-native';
+import { ConnectWallet, useAddress, useConnectionStatus, useBalance, useChainId } from '@thirdweb-dev/react-native';
 import { useNetworkSwitcher } from '@/hooks/useNetworkSwitcher';
-import { shortenAddress } from '@/lib/utils';
 
 const WalletButton = () => {
-  const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { open } = useAppKit();
-  const { getNetworkName } = useNetworkSwitcher();
+  const address = useAddress();
+  const connectionStatus = useConnectionStatus();
   const chainId = useChainId();
-  const { data: balanceData } = useBalance({ address, chainId });
+  const { data: balanceData } = useBalance();
+  const { getNetworkName } = useNetworkSwitcher();
   const [isModalVisible, setModalVisible] = useState(false);
+
+  const isConnected = connectionStatus === 'connected';
+  const isConnecting = connectionStatus === 'connecting';
 
   const handleConnect = () => {
     if (!isConnected) {
-      // Try using Reown AppKit first for a better wallet connection experience
-      open();
+      // Open modal to show connection options
+      setModalVisible(true);
     } else {
       // Open modal with wallet details when already connected
       setModalVisible(true);
     }
-  };
-
-  const handleDisconnect = () => {
-    disconnect();
-    setModalVisible(false);
   };
 
   const truncateAddress = (address: string): string => {
@@ -39,13 +33,15 @@ const WalletButton = () => {
     <>
       <TouchableOpacity style={styles.button} onPress={handleConnect}>
         <Text style={styles.buttonText}>
-          {isConnected 
-            ? `${truncateAddress(address as string)} (${getNetworkName(chainId)})` 
-            : 'Connect Wallet'}
+          {isConnecting 
+            ? 'Connecting...' 
+            : isConnected 
+              ? `${truncateAddress(address || '')} (${getNetworkName(chainId)})` 
+              : 'Connect Wallet'}
         </Text>
       </TouchableOpacity>
 
-      {/* Wallet Details Modal */}
+      {/* Wallet Connection/Details Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -54,25 +50,38 @@ const WalletButton = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Wallet Connected</Text>
-            <Text style={styles.addressLabel}>Address:</Text>
-            <Text style={styles.addressText}>{address}</Text>
-            <Text style={styles.networkLabel}>Network:</Text>
-            <Text style={styles.networkText}>{getNetworkName(chainId)}</Text>
-            <Text style={styles.balanceLabel}>Wallet Balance:</Text>
-            <Text style={styles.balanceText}>{balanceData ? `${balanceData.formatted} ${balanceData.symbol}` : 'Loading...'}</Text>
-            <TouchableOpacity 
-              style={styles.disconnectButton} 
-              onPress={handleDisconnect}
-            >
-              <Text style={styles.disconnectButtonText}>Disconnect</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+            {isConnected ? (
+              <>
+                <Text style={styles.modalTitle}>Wallet Connected</Text>
+                <Text style={styles.addressLabel}>Address:</Text>
+                <Text style={styles.addressText}>{address}</Text>
+                <Text style={styles.networkLabel}>Network:</Text>
+                <Text style={styles.networkText}>{getNetworkName(chainId)}</Text>
+                <Text style={styles.balanceLabel}>Wallet Balance:</Text>
+                <Text style={styles.balanceText}>{balanceData ? `${balanceData.displayValue} ${balanceData.symbol}` : 'Loading...'}</Text>
+                <TouchableOpacity 
+                  style={styles.disconnectButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.disconnectButtonText}>Close</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>Connect Wallet</Text>
+                <ConnectWallet 
+                  theme="dark"
+                  btnTitle="Connect Wallet"
+                  modalSize="compact"
+                />
+                <TouchableOpacity 
+                  style={styles.closeButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </Modal>

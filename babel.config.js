@@ -16,7 +16,16 @@ module.exports = function (api) {
         {
           alias: {
             '@': './',
+            // Polyfill for crypto module
+            crypto: 'react-native-crypto',
           },
+        },
+      ],
+      // Plugin to transform require calls for problematic modules
+      [
+        'transform-inline-environment-variables',
+        {
+          include: ['NODE_ENV', 'REOWN_PROJECT_ID', 'THIRDWEB_CLIENT_ID'],
         },
       ],
     ],

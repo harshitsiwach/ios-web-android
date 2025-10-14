@@ -1,52 +1,25 @@
-import { useChainId, useSwitchChain } from 'wagmi';
-import { base, polygon, arbitrum, bsc } from '@wagmi/core/chains';
+import { useWallet } from './use-wallet';
+import { useChainId } from '@thirdweb-dev/react-native';
 
-// Define network names mapping
+// Network names mapping
 const NETWORK_NAMES: { [key: number]: string } = {
-  [base.id]: 'Base',
-  [polygon.id]: 'Polygon',
-  [arbitrum.id]: 'Arbitrum',
-  [bsc.id]: 'Binance Smart Chain',
   1: 'Ethereum',
   5: 'Goerli',
   11155111: 'Sepolia',
-  8453: 'Base',
-  84532: 'Base Sepolia',
   137: 'Polygon',
   80001: 'Polygon Mumbai',
+  8453: 'Base',
+  84532: 'Base Sepolia',
   42161: 'Arbitrum One',
   421613: 'Arbitrum Goerli',
-  56: 'Binance Smart Chain',
+  10: 'Optimism',
+  420: 'Optimism Goerli',
 };
 
 export const useNetworkSwitcher = () => {
+  const { switchChain } = useWallet();
   const chainId = useChainId();
-  const { switchChain, isPending } = useSwitchChain();
-
-  const switchToBase = () => {
-    if (chainId !== base.id) {
-      switchChain({ chainId: base.id });
-    }
-  };
-
-  const switchToPolygon = () => {
-    if (chainId !== polygon.id) {
-      switchChain({ chainId: polygon.id });
-    }
-  };
-
-  const switchToArbitrum = () => {
-    if (chainId !== arbitrum.id) {
-      switchChain({ chainId: arbitrum.id });
-    }
-  };
-
-  const switchToBsc = () => {
-    if (chainId !== bsc.id) {
-      switchChain({ chainId: bsc.id });
-    }
-  };
-
+  
   const getNetworkName = (chainId?: number): string => {
     if (!chainId) return 'Unknown';
     return NETWORK_NAMES[chainId] || `Chain ${chainId}`;
@@ -54,11 +27,7 @@ export const useNetworkSwitcher = () => {
 
   return {
     currentChain: { id: chainId },
-    switchToBase,
-    switchToPolygon,
-    switchToArbitrum,
-    switchToBsc,
     getNetworkName,
-    isSwitching: isPending,
+    switchChain,
   };
 };
